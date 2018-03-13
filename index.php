@@ -23,6 +23,18 @@
 
   }
 
+  if(!empty($_GET)){
+     $comment = htmlspecialchars($_GET['renew_comment']);
+
+     $nickname=htmlspecialchars($_GET['renew_nickname']);
+
+    $sql= 'UPDATE `members` SET `nickname`=?,`comment`=? WHERE `id`=   ?';
+    $data= array ($nickname,$comment,$id);
+    $stmt= $dbh->prepare($sql);
+    $stmt->execute($data);?>
+    <p>編集完了しました。</p>
+  <?php }
+
   // つぶやくボタンが押された時
   if (!empty($_POST)) {
 
@@ -147,7 +159,7 @@
       <div class="col-md-8 content-margin-top">
         <?php foreach($tweet_list as $one_tweet) { ?>
         <div class="msg">
-          <img src="picture_path/<?php echo $one_tweet['picture_path'] ?>" width="48" height="48">
+          <img src="picture_path/<?php echo $one_tweet['picture_path']; ?>" width="48" height="48">
           <p>
             <?php echo $one_tweet['tweet']; ?><span class="name"> <?php echo $one_tweet['nick_name'] ?> </span>
             [<a href="#">Re</a>]
@@ -156,8 +168,8 @@
             <a href="view.html">
               <?php echo $one_tweet['created']; ?>
             </a>
-            [<a href="#" style="color: #00994C;">編集</a>]
-            [<a href="#" style="color: #F33;">削除</a>]
+            [<a href="edit.php" style="color: #00994C;">編集</a>]
+            [<a href="delete2.php?id=<?php echo $one_tweet['tweet_id']?>" style="color: #F33;">削除</a>]
           </p>
         </div>
         <?php } ?>
