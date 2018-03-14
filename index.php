@@ -39,13 +39,67 @@
       $stmt->execute($data);
     }
   }
+  // ページング機能
+  //空の変数を用意
+  $page= '';
+
+  //パラメーターが存在していた場合ページ番号を代入
+  if(isset($_GET['page'])){
+    $page= $_GET['page'];
+  }else{
+    $page=1;
+  }
+
+  //1以下のイレギュラーな数字が入って来た時、ページ番号を強制的に１とする
+  //max カンマ区切りで羅列された数字の中から最大の数字を取得する
+
+  $page= max($page,1);
+
+  //1ページ分の表示件数を指定
+  $page_number= 5;
+
+  //データの件数から最大ページを計算する
+  $page_sql= 'SELECT COUNT(*) AS `page_count` FROM `tweets` WHERE `delete_flag`=0';
+  $page_stmt= $dbh->prepare($page_sql);
+  $page_stmt->execute();
+
+  $page_count= $page_stmt->fetch(PDO::FETCH_ASSOC);
+  echo '<br>';
+  echo '<br>';
+  var_dump($page_count);
+  //ceil 小数点切り上げ
+
+  $all_page_number= ceil($page_count['page_count'] / $page_number);
+
+  //パラメータのページ番号が最大ページを超えていれば、強制的に最後のページとする
+  //min カンマ区切りで羅列された数字の中から最小の数字を取得する
+  $page= min($page,$all_page_number);
+ //表示するデータの取得開始場所
+  $start= ($page -1)*$page_number;
+
+
+
+
+
+
+
+
+
+
+
   // 一覧用の投稿全件取得
   // テーブル結合
   // INNER JOIN と OUTER JOIN(left join と right join)
   // INNER JOIN = 両方のテーブルに存在するデータのみ取得
   // OUTER JOIN(left join と right join) = 複数のテーブルがあり、それらを結合する際に優先テーブルを一つ決め、そこにある情報は全て表示しながら、他のテーブルの情報に対になるデータがあれば表示する
   // 優先テーブルに指定されると、そのテーブルの情報を全て表示される
-  $tweet_sql = 'SELECT * FROM `members` RIGHT JOIN `tweets` ON `members`.`member_id`=`tweets`.`member_id` WHERE `delete_flag`=0 ORDER BY `tweets`.`modified` DESC';
+  //LIMIT = テーブルから取得する範囲を指定する
+  // LIMIT 取得する配列のキー、取得する数
+  //LIMIT DESCとかの間にスペースを入れる
+
+
+
+  $tweet_sql = "SELECT `tweets`.*,`members`.`nick_name`, `members`.`picture_path` FROM `members` LEFT JOIN `tweets` ON `members`.`member_id`=`tweets`.`member_id` WHERE `delete_flag`=0 ORDER BY `tweets`.`modified` DESC LIMIT ".$start.",".$page_number;
   $tweet_stmt = $dbh->prepare($tweet_sql);
   $tweet_stmt->execute();
   // 空の配列を用意
@@ -124,9 +178,22 @@
           <ul class="paging">
             <input type="submit" class="btn btn-info" value="つぶやく">
                 &nbsp;&nbsp;&nbsp;&nbsp;
-                <li><a href="index.html" class="btn btn-default">前</a></li>
-                &nbsp;&nbsp;|&nbsp;&nbsp;
-                <li><a href="index.html" class="btn btn-default">次</a></li>
+<!--                 最初のページの時、前のボタンを押せないようになる
+ -->                <?php if ($page== 1) { ?>
+                <li>前</li>
+             <?php }else{ ?>
+                  <li><a href="index.php?page=<?php echo $page -1; ?>" class="btn btn-default">前</a></li>
+                <?php } ?>
+              &nbsp;&nbsp;|&nbsp;&nbsp;
+<!--               最後のページの時に次のボタンを押せないようになる
+ -->              <?php if ($page== $all_page_number) { ?>
+                <li>次</li>
+              <?php }else{ ?>
+              <li><a href="index.php?page=<?php echo $page +1; ?>" class="btn btn-default">次</a></li>
+              <?php } ?>
+<!--               現在のページ/最大のページ
+ -->
+               <li><?php echo $page; ?>/<?php echo $all_page_number; ?></li>
           </ul>
         </form>
       </div>
@@ -136,8 +203,14 @@
         <div class="msg">
           <img src="picture_path/<?php echo $one_tweet['picture_path']; ?>" width="48" height="48">
           <p>
-            <?php echo $one_tweet['tweet']; ?><span class="name"> (<?php echo $one_tweet['nick_name']; ?>)</span>
-            [<a href="view.php?tweet_id=<?php echo $one_tweet['tweet_id']; ?>">Re</a>]
+            <?php echo $one_tweet['tweet']; ?>
+
+
+            <a  class="name" href="view.php?tweet_id=<?php echo $one_tweet['tweet_id']; ?>"> (<?php echo $one_tweet['nick_name']; ?>)</a>
+
+
+            <?php if(($login_member['member_id'])!=$one_tweet['member_id']){ ?><a>[Re]</a>
+            <?php } ?>
           </p>
           <p class="day">
             <a href="view.html">
@@ -148,8 +221,10 @@
               echo $modify_date;
               ?>
             </a>
+            <?php if(($login_member['member_id'])==$one_tweet['member_id']){ ?>
             [<a href="edit.php?tweet_id=<?php echo $one_tweet['tweet_id']; ?>" style="color: #00994C;">編集</a>]
             [<a href="delete2.php?tweet_id=<?php echo $one_tweet['tweet_id']; ?>" style="color: #F33;">削除</a>]
+            <?php } ?>
           </p>
         </div>
         <?php } ?>

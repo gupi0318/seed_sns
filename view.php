@@ -1,17 +1,28 @@
 <?php 
     require('dbconnect.php');
-
+    session_start();
+   if (!empty($_GET)) {
     $tweet_id=$_GET["tweet_id"];
 
-    $tweet_sql = 'SELECT * FROM `members` RIGHT JOIN `tweets` ON `members`.`member_id`=`tweets`.`member_id` WHERE `tweet_id`=?';
+    $tweet_sql = 'SELECT * FROM `members` RIGHT JOIN `tweets` ON `members`.`member_id`=`tweets`.`member_id` WHERE `tweet_id`=?';}else{
+      header("Location:login.php");
+      exit();
+    }
     $data=array($tweet_id);
     $stmt = $dbh->prepare($tweet_sql);
     $stmt->execute($data);
 
 
     $member= $stmt->fetch(PDO::FETCH_ASSOC);
+    echo '<br>';
+    echo '<br>';
 
     var_dump($member);
+    echo '<br>';
+    echo '<br>';
+    var_dump($_SESSION['id']);
+
+
 
  ?>
 
@@ -68,8 +79,10 @@
             <?php echo $member['tweet']; ?>
           </p>
           <p class="day">
-            2016-01-28 18:04
-            <a href=delete2.php?tweet_id=<?php echo $member['tweet_id'];?> style="color: #F33;">削除</a>]
+            <?php if(($_SESSION['id'])==($member['member_id'])){ ?>
+
+            <a href=delete2.php?tweet_id=<?php echo $member['tweet_id'];?> style="color: #F33;">[削除]</a>]
+            <?php } ?>
           </p>
         </div>
         <a href="index.php">&laquo;&nbsp;一覧へ戻る</a>

@@ -2,9 +2,7 @@
   session_start();
   require('dbconnect.php');
 
-  echo '<br>';
-  echo '<br>';
-  var_dump($_SESSION);
+
 
   // COOKIEにログイン情報が保存されていたら自動でログイン
   if (isset($_COOKIE['email']) && !empty($_COOKIE['email'])) {
