@@ -2,47 +2,30 @@
   session_start();
   // DBの接続
   require('dbconnect.php');
-
+  // var_dump($_SESSION);exit;
   // ログインチェック
-  // 1時間ログインしていない場合再度ログイン
-  if (isset($_SESSION['id']) && $_SESSION['time']+3600>time()) {
+  // 1時間ログインしていない場合、再度ログイン
+  if (isset($_SESSION['id']) && $_SESSION['time'] + 3600 > time()) {
     // ログインしている
     // ログイン時間の更新
-    $_SESSION['time']=time();
+    $_SESSION['time'] = time();
     // ログインユーザー情報取得
-
-  $login_sql = 'SELECT * FROM `members` WHERE `member_id`=?';
-  $login_data = array($_SESSION['id']);
-  $login_stmt = $dbh->prepare($login_sql);
-  $login_stmt->execute($login_data);
-  $login_member = $login_stmt->fetch(PDO::FETCH_ASSOC);
-  }else{
-   // ログインしていない、または時間切れの場合
+    $login_sql = 'SELECT * FROM `members` WHERE `member_id`=?';
+    $login_data = array($_SESSION['id']);
+    $login_stmt = $dbh->prepare($login_sql);
+    $login_stmt->execute($login_data);
+    $login_member = $login_stmt->fetch(PDO::FETCH_ASSOC);
+  } else {
+    // ログインしていない、または時間切れの場合
     header('Location: login.php');
     exit;
-
   }
-
-  if(!empty($_GET)){
-     $comment = htmlspecialchars($_GET['renew_comment']);
-
-     $nickname=htmlspecialchars($_GET['renew_nickname']);
-
-    $sql= 'UPDATE `members` SET `nickname`=?,`comment`=? WHERE `id`=   ?';
-    $data= array ($nickname,$comment,$id);
-    $stmt= $dbh->prepare($sql);
-    $stmt->execute($data);?>
-    <p>編集完了しました。</p>
-  <?php }
-
   // つぶやくボタンが押された時
   if (!empty($_POST)) {
-
     // 入力チェック
     if ($_POST['tweet'] == '') {
       $error['tweet'] = 'blank';
     }
-
     if (!isset($error)) {
       // SQL文作成(INSERT INTO)
       // tweet=つぶやいた内容
@@ -50,30 +33,23 @@
       // reply_tweet_id=-1
       // created=現在日時。now()を使用
       // modified=現在日時。now()を使用
-
       $sql = 'INSERT INTO `tweets` SET `tweet`=?, `member_id`=?, `reply_tweet_id`=?, `created`=NOW(), `modified`=NOW()';
       $data = array($_POST['tweet'], $_SESSION['id'], -1);
       $stmt = $dbh->prepare($sql);
       $stmt->execute($data);
-
     }
   }
-
- 
   // 一覧用の投稿全件取得
-  //テーブル結合
+  // テーブル結合
   // INNER JOIN と OUTER JOIN(left join と right join)
   // INNER JOIN = 両方のテーブルに存在するデータのみ取得
-  // OUTER JOIN = 複数のテーブルがあり、それらを結合する際に優先テーブルを１つ決め、そこにある情報はすべて表示しながら、他のテーブルの情報に対になるデータあれば表示する
-  //優先テーブルに指定されるとそのテーブルの情報はすべて表示される
-
-  $tweet_sql = 'SELECT * FROM `tweets` LEFT JOIN `members` ON `tweets`.`member_id`=`members`.`member_id` ORDER BY `tweets`.`created` DESC';
+  // OUTER JOIN(left join と right join) = 複数のテーブルがあり、それらを結合する際に優先テーブルを一つ決め、そこにある情報は全て表示しながら、他のテーブルの情報に対になるデータがあれば表示する
+  // 優先テーブルに指定されると、そのテーブルの情報を全て表示される
+  $tweet_sql = 'SELECT * FROM `members` RIGHT JOIN `tweets` ON `members`.`member_id`=`tweets`.`member_id` WHERE `delete_flag`=0 ORDER BY `tweets`.`modified` DESC';
   $tweet_stmt = $dbh->prepare($tweet_sql);
   $tweet_stmt->execute();
-
   // 空の配列を用意
   $tweet_list = array(); // データがない時のエラーを防ぐ
-
   // 一覧用の投稿全件取得
   while (true) {
     $tweet = $tweet_stmt->fetch(PDO::FETCH_ASSOC);
@@ -82,12 +58,11 @@
     }
     $tweet_list[] = $tweet;
   }
-
+  echo '<br>';
+  echo '<br>';
   echo '<pre>';
   var_dump($tweet_list);
   echo '</pre>';
-
-
 ?>
 
 <!DOCTYPE html>
@@ -161,15 +136,20 @@
         <div class="msg">
           <img src="picture_path/<?php echo $one_tweet['picture_path']; ?>" width="48" height="48">
           <p>
-            <?php echo $one_tweet['tweet']; ?><span class="name"> <?php echo $one_tweet['nick_name'] ?> </span>
-            [<a href="#">Re</a>]
+            <?php echo $one_tweet['tweet']; ?><span class="name"> (<?php echo $one_tweet['nick_name']; ?>)</span>
+            [<a href="view.php?tweet_id=<?php echo $one_tweet['tweet_id']; ?>">Re</a>]
           </p>
           <p class="day">
             <a href="view.html">
-              <?php echo $one_tweet['created']; ?>
+              <?php 
+              $modify_date = $one_tweet["modified"];
+              // strtotime 文字型のデータを日時型に変換できる
+              $modify_date = date("Y-m-d H:i",strtotime($modify_date));
+              echo $modify_date;
+              ?>
             </a>
-            [<a href="edit.php" style="color: #00994C;">編集</a>]
-            [<a href="delete2.php?id=<?php echo $one_tweet['tweet_id']?>" style="color: #F33;">削除</a>]
+            [<a href="edit.php?tweet_id=<?php echo $one_tweet['tweet_id']; ?>" style="color: #00994C;">編集</a>]
+            [<a href="delete2.php?tweet_id=<?php echo $one_tweet['tweet_id']; ?>" style="color: #F33;">削除</a>]
           </p>
         </div>
         <?php } ?>

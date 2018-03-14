@@ -1,35 +1,20 @@
-<?php
-	session_start();
-	require('dbconnect.php');
-	// $_GETの値が空じゃない時 = セットされている時
-	if (!empty($_GET)) {
-		$sql = 'SELECT * FROM `tweets` WHERE `tweet_id`=?';
-		$data = array($_GET['tweet_id']);
-		$stmt = $dbh->prepare($sql);
-  		$stmt->execute($data);
-  		$tweet_edit = $stmt->fetch(PDO::FETCH_ASSOC);
-	}
-	// POST送信された時
-	if (!empty($_POST)){
-	    // 入力チェック
-	    if ($_POST['tweet'] == ''){
-	      $error['tweet'] = 'blank';
-	    }
-	    // エラーがセットされていない時
-	    if (!isset($error)) {
-	      // SQL文作成
-	      // Update文
-	      $sql = 'UPDATE `tweets` SET `tweet`=?, `modified`=NOW() WHERE `tweet_id`=?';
-	      //SQL文実行
-	      $data = array($_POST['tweet'], $_GET['tweet_id']);
-	      $stmt = $dbh->prepare($sql);
-	      $stmt->execute($data);
-	      //一覧へ移動する
-	      header("Location: index.php");
-	      exit();
-	    }
-	}
-?>
+<?php 
+    require('dbconnect.php');
+
+    $tweet_id=$_GET["tweet_id"];
+
+    $tweet_sql = 'SELECT * FROM `members` RIGHT JOIN `tweets` ON `members`.`member_id`=`tweets`.`member_id` WHERE `tweet_id`=?';
+    $data=array($tweet_id);
+    $stmt = $dbh->prepare($tweet_sql);
+    $stmt->execute($data);
+
+
+    $member= $stmt->fetch(PDO::FETCH_ASSOC);
+
+    var_dump($member);
+
+ ?>
+
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -64,7 +49,7 @@
           <!-- Collect the nav links, forms, and other content for toggling -->
           <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
               <ul class="nav navbar-nav navbar-right">
-                <li><a href="logout.php">ログアウト</a></li>
+                <li><a href="logout.html">ログアウト</a></li>
               </ul>
           </div>
           <!-- /.navbar-collapse -->
@@ -74,24 +59,18 @@
 
   <div class="container">
     <div class="row">
-      <div class="col-md-6 col-md-offset-3 content-margin-top">
-        <h4>つぶやき編集</h4>
+      <div class="col-md-4 col-md-offset-4 content-margin-top">
         <div class="msg">
-          <form method="POST" action="" class="form-horizontal" role="form">
-              <!-- つぶやき -->
-              <div class="form-group">
-                <label class="col-sm-4 control-label">つぶやき</label>
-                <div class="col-sm-8">
-                  <textarea name="tweet" cols="50" rows="5" class="form-control" placeholder="例：Hello World!"><?php echo $tweet_edit['tweet']; ?></textarea>
-                  <?php if (isset($error) && ($error['tweet'] == 'blank')){ ?>
-                    <p class="error">なにかつぶやいてください。</p>
-                  <?php  } ?>
-                </div>
-              </div>
-            <ul class="paging">
-              <input type="submit" class="btn btn-info" value="更新">
-            </ul>
-          </form>
+          <img src="picture_path/<?php echo $member['picture_path']; ?>" width="100" height="100">
+          <p>投稿者 : <?php echo $member['nick_name']; ?></span></p>
+          <p>
+            つぶやき : <br>
+            <?php echo $member['tweet']; ?>
+          </p>
+          <p class="day">
+            2016-01-28 18:04
+            <a href=delete2.php?tweet_id=<?php echo $member['tweet_id'];?> style="color: #F33;">削除</a>]
+          </p>
         </div>
         <a href="index.php">&laquo;&nbsp;一覧へ戻る</a>
       </div>
